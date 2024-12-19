@@ -95,12 +95,26 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
 
     Dùng khi bạn muốn giữ giá trị hoặc hàm chỉ có thể truy cập trong chính hợp đồng đó, không cho phép kế thừa hay truy cập từ hợp đồng con.
 
-- Các từ khóa khai báo hàm:
+- Các từ khóa khai báo hàm: (Visibility)
 
   - `public`: Chỉ định hàm có thể được gọi từ bất kỳ đâu (bên trong hợp đồng, từ các hợp đồng khác, hoặc từ các ứng dụng bên ngoài).
+
+    Inside contract and Outside contract
+
   - `internal`: Chỉ định hàm có thể được gọi chỉ trong hợp đồng hiện tại và các hợp đồng kế thừa (subclass).
+
+    Only inside contract and child contract
+
   - `private`: Chỉ định hàm chỉ có thể được gọi bên trong hợp đồng hiện tại (không thể kế thừa hoặc gọi từ các hợp đồng khác).
+
+    Only inside contract
+
   - `external`: Chỉ định hàm có thể được gọi từ các hợp đồng khác hoặc từ bên ngoài, nhưng không thể gọi trực tiếp từ bên trong hợp đồng hiện tại.
+
+    Only from outside contract
+
+    **Contract con cũng có thể gọi được nhưng phải dùng: this.externalFunc()** - đây là cách viết để gọi bên ngoài contract chỉ khác là dùng this hoặc tên contract
+
   - `view`: Chỉ định hàm không thay đổi trạng thái của hợp đồng và chỉ đọc dữ liệu (không ghi vào blockchain).
   - `pure`: Chỉ định hàm không thay đổi trạng thái và **KHÔNG ĐỌC** trạng thái hợp đồng. Nó chỉ tính toán giá trị dựa trên các đối số và trả về kết quả.
   - `payable`: Chỉ định hàm có thể nhận ether (ví dụ: khi chuyển tiền vào hợp đồng).
@@ -152,9 +166,13 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
       Dữ liệu chỉ đọc (không thay đổi) được truyền vào một hàm từ bên ngoài hợp đồng.
       Ví dụ: mảng hoặc chuỗi ký tự được truyền làm tham số.
 
+  - `stack` (Dữ liệu chỉ đọc từ input của hàm)
+
+    Là nơi lưu trữ tạm thời nhất trong Ethereum Virtual Machine (EVM), được sử dụng để lưu các biến cục bộ và dữ liệu trong các tính toán tức thời.
+
 - Các kiểu dữ liệu:
 
-  - Kiểu dữ liệu giá trị:
+  - Kiểu dữ liệu giá trị - danh sách member functions
 
     - `uint`: số nguyên không âm
 
@@ -162,25 +180,48 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
 
       Nếu không khai báo số thì sẽ là mặc định phạm vi lớn nhất
 
+      - add(uint256 b) (kể từ Solidity 0.8.0): Cộng hai số với kiểm tra tràn số (overflow). Cú pháp: a.add(b).
+      - sub(uint256 b): Trừ hai số với kiểm tra tràn số. Cú pháp: a.sub(b).
+      - mul(uint256 b): Nhân hai số với kiểm tra tràn số. Cú pháp: a.mul(b).
+      - div(uint256 b): Chia hai số với kiểm tra chia cho 0. Cú pháp: a.div(b).
+      - mod(uint256 b): Lấy phần dư của phép chia. Cú pháp: a.mod(b).
+      - Bitwise Operations:
+        - and: Toán tử AND bitwise.
+        - or: Toán tử OR bitwise.
+        - xor: Toán tử XOR bitwise.
+        - not: Đảo ngược bit.
+
     - `int`: số nguyên có dấu
+      - HÀM MEMBER GIỐNG CỦA `uint`
+  
     - `bytes`: Kích thước cố định: bytes1, bytes2, ..., bytes32.
-
+      - HÀM MEMBER GIỐNG CỦA `string`
       **_Ba loại trên có thể khai báo số để chỉ định kích thước đầu vào_**
-
     - `bool`
     - `address`: ethereum 20 bytes (Có thể sử dụng các phương thức như balance hoặc transfer.)
+      - `.balance`
+      - `.code`
+      - `.codehash`
+      - `.send` <=> `.send(uint256 amount)` : **Có khi khai báo `address payable`**
+      - `transfer` <=> `.transfer(uint256 amount)` : **Có khi khai báo `address payable`**
+      - `call` <=> `call(bytes memory data)` : Trả về (success, data)
+      - `delegatecall` <=> `delegatecall(bytes memory data)` : Trả về (success, data)
+      - `staticcall` <=> `staticcall(bytes memory data)` : Trả về (success, data)
 
     - `string`
+      - `length`
+      - `slice(uint start, uint length)`
+
     - `enum`
 
   - Kiểu dữ liệu tham chiếu:
-
     - `arrays`
+      - `.length`
+      - `.push()`
+      - `.pop()`
     - `struct`: tập hợp biến giống object JS
     - `mapping`
-
   - Kiểu dữ liệu đặc biệt:
-
     - `function`
     - `tuple`
 
@@ -190,3 +231,51 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
     - `address`: 0x0000000000000000000000000000000000000000
     - `string` và bytes: ""
 
+- Tính kế thừa: Inheritance
+
+ - Có thể kế thừa đơn hoặc đa: contract A is B hoặc contract A is B, C
+
+ - Muốn override hàm thì hàm cần override ở contract cha phải khai báo `virtual` và contract con phải khai báo override
+
+ - Nếu override 2 hay nhiều hàm trùng tên (hàm có ở các contract cha) ở đa kế thừa thì phải khai báo override(<contract-cha-1>, <contract-cha-2>, ...)
+
+ - Có 2 cách gọi constructor trong contract cha
+  ```
+    contract A {
+      string public name;
+
+      constructor(string memory _name) {
+        name = _name
+      }
+    }
+
+    contract B {
+      string public text;
+
+      constructor(string memory _text) {
+        text = _text
+      }
+    }
+
+    contract C is A("nameC"), B("textC") {
+      C c = new C();
+
+      A.name = "nameC"
+      B.text = "textC"
+      // code
+    }
+
+    contract D is A, B {
+      constructor (string memory _name, string memory _text) S(_name) T(_text) {
+        // code
+      }
+
+      D d = new D("nameD", "textD")
+      A.name = "nameD"
+      B.text = "textD"
+    }
+  ```
+
+  - Có thể gọi hàm của contract cha bằng super (tuân thủ tuần tự từ cha xuống con theo `thứ tự Linearization`, đa kế thừa thì từ phải sang trái)
+
+  - Có thể chỉ định gọi hay vì super (B.foo()) - cách này gọi là `direct`
