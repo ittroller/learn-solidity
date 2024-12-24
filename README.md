@@ -233,13 +233,13 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
 
 - Tính kế thừa: Inheritance
 
- - Có thể kế thừa đơn hoặc đa: contract A is B hoặc contract A is B, C
+  - Có thể kế thừa đơn hoặc đa: contract A is B hoặc contract A is B, C
 
- - Muốn override hàm thì hàm cần override ở contract cha phải khai báo `virtual` và contract con phải khai báo override
+  - Muốn override hàm thì hàm cần override ở contract cha phải khai báo `virtual` và contract con phải khai báo override
 
- - Nếu override 2 hay nhiều hàm trùng tên (hàm có ở các contract cha) ở đa kế thừa thì phải khai báo override(<contract-cha-1>, <contract-cha-2>, ...)
+  - Nếu override 2 hay nhiều hàm trùng tên (hàm có ở các contract cha) ở đa kế thừa thì phải khai báo override(<contract-cha-1>, <contract-cha-2>, ...)
 
- - Có 2 cách gọi constructor trong contract cha
+  - Có 2 cách gọi constructor trong contract cha
   ```
     contract A {
       string public name;
@@ -279,3 +279,169 @@ npx hardhat ignition deploy ./ignition/modules/Lock.js
   - Có thể gọi hàm của contract cha bằng super (tuân thủ tuần tự từ cha xuống con theo `thứ tự Linearization`, đa kế thừa thì từ phải sang trái)
 
   - Có thể chỉ định gọi hay vì super (B.foo()) - cách này gọi là `direct`
+
+
+- Có 3 cách gọi contract trong solidity:
+
+  Ví dụ có contract B
+  ```
+  // Contract B
+    contract B {
+        uint public value;
+
+        function setValue(uint _value) public {
+            value = _value;
+        }
+    }
+    ```
+
+  - Gọi trực tiếp (Direct Call)
+
+    ```
+    // Contract A
+    contract A {
+      B public b;
+
+      constructor(address _contractB) {
+        b = B(_contractB); // Khởi tạo contract B
+      }
+
+      function callSetValue(uint _value) public {
+        b.setValue(_value); // Gọi hàm setValue của contract B
+      }
+
+      function getValue() public view returns (uint) {
+        return b.value(); // Lấy giá trị từ contract B
+      }
+    }
+    ```
+  - Sử dụng call (Low-Level Call)
+
+    ```
+    contract A {
+      function callSetValue(address _contractB, uint _value) public {
+        // Sử dụng call để gọi hàm setValue của contract B
+        (bool success, ) = _contractB.call(
+          abi.encodeWithSignature("setValue(uint256)", _value)
+        );
+        require(success, "Call failed");
+      }
+    }
+    ```
+
+  - Sử dụng Interface
+
+    ```
+    // Interface cho Contract B
+    interface IB {
+      function setValue(uint _value) external;
+      function value() external view returns (uint);
+    }
+
+    // Contract A
+    contract A {
+      IB public b;
+
+      constructor(address _contractB) {
+        b = IB(_contractB); // Khởi tạo interface IB
+      }
+
+      function callSetValue(uint _value) public {
+        b.setValue(_value); // Gọi hàm setValue thông qua interface
+      }
+
+      function getValue() public view returns (uint) {
+        return b.value(); // Lấy giá trị thông qua interface
+      }
+    }
+    ```
+
+  **SO SÁNH**
+
+  - Direct Call:
+    - Ưu điểm: Type-safe, rõ ràng. Dễ hiểu với code nhỏ gọn.
+    - Nhược điểm: Phải có mã nguồn của contract khác.
+    - Khi bạn làm việc với các hợp đồng bạn sở hữu hoặc quản lý.
+    - Dùng trong các dự án nhỏ hoặc đơn giản.
+
+  - Low-Level Call:
+    - Ưu điểm: Linh hoạt. Không cần biết interface/mã nguồn.
+    - Nhược điểm: Không an toàn. Khó debug. Type-unsafe.
+    - Khi bạn cần gọi đến các hợp đồng không xác định trước hoặc thực hiện các tương tác phức tạp.
+    - Cần cẩn thận khi dùng để tránh các lỗ hổng bảo mật.
+
+  - Interface Call:
+    - Ưu điểm: An toàn. Tối ưu cho dự án lớn. Rõ ràng.
+    - Nhược điểm: Phải định nghĩa interface cho contract cần gọi.
+    - Khi làm việc với các hợp đồng ngoài (như các giao thức DeFi, token ERC20, ERC721).
+    - Phù hợp với các dự án lớn, dễ bảo trì, và an toàn hơn.
+
+- Library là một loại hợp đồng đặc biệt trong Solidity, được sử dụng để chứa các hàm dùng chung mà không duy trì trạng thái (stateless).
+
+  Libraries giúp tái sử dụng mã nguồn và tối ưu hóa chi phí gas bằng cách giảm thiểu sự lặp lại của logic trong các hợp đồng khác.
+
+  - Stateless (Không trạng thái): Library không thể chứa biến trạng thái (state variables) hoặc thực hiện các hành động liên quan đến trạng thái như lưu dữ liệu trên blockchain.
+  - Chỉ định internal hoặc public: Các hàm trong Library có thể được khai báo là internal hoặc public.
+  - Khả năng sử dụng lại mã nguồn: Library có thể được gọi bởi các hợp đồng khác để thực hiện các thao tác logic chung.
+  - Không thể nhận Ether: Library không thể nhận hoặc lưu Ether.
+  - Không thể bị kế thừa: Library không thể được kế thừa bởi các hợp đồng khác.
+
+    Library có thể được liên kết tĩnh hoặc delegate call:
+    - Tĩnh: Khi gọi trực tiếp hàm từ library.
+    - Delegate call: Khi sử dụng library với using for.
+
+**CÁC TIÊU CHUẨN ERC**
+
+- `ERC-20 (Fungible Token)`
+    - ERC-20 là tiêu chuẩn cho Fungible Token (token có tính hoán đổi). Tất cả các token ERC-20 có giá trị và tính năng giống nhau, không thể phân biệt giữa các token.
+    - Tiền điện tử, stablecoin, hoặc các token quản trị. Ví dụ: USDT, DAI, LINK.
+    - Hàm chính trong ERC-20:
+      - totalSupply: Tổng số lượng token phát hành.
+      - balanceOf: Lấy số dư của một địa chỉ cụ thể.
+      - transfer: Chuyển token từ người gửi đến người nhận.
+      - approve: Cho phép một địa chỉ khác chi tiêu token của người gửi.
+      - transferFrom: Thực hiện chuyển token từ tài khoản này sang tài khoản khác.
+      - allowance: Lấy số lượng token mà một địa chỉ được phép chi tiêu thay mặt người khác.
+      
+
+- `ERC-721 (Non-Fungible Token - NFT)`
+    - ERC-721 là tiêu chuẩn cho Non-Fungible Token (NFT).
+    - Mỗi token là duy nhất và có giá trị khác nhau.
+    - Thường được sử dụng để đại diện cho tài sản kỹ thuật số duy nhất như: tác phẩm nghệ thuật số, vật phẩm trong trò chơi, quyền sở hữu bất động sản.
+    - NFT nghệ thuật (ví dụ: Bored Ape Yacht Club, CryptoPunks). Vật phẩm game (ví dụ: Axie Infinity).
+    - Hàm chính trong ERC-721:
+      - ownerOf: Lấy chủ sở hữu của một token (NFT) cụ thể.
+      - transferFrom: Chuyển token từ người này sang người khác.
+      - safeTransferFrom: Tương tự như transferFrom, nhưng thêm kiểm tra an toàn.
+      - approve: Cho phép một địa chỉ khác chuyển token thay mặt chủ sở hữu.
+      - tokenURI: Trả về thông tin chi tiết của token (metadata).
+
+
+- `ERC-1155 (Multi Token Standard)`
+    - ERC-1155 là tiêu chuẩn đa chức năng, hỗ trợ cả fungible và non-fungible token trong cùng một hợp đồng.
+    - Một contract ERC-1155 có thể chứa nhiều loại token với các đặc điểm khác nhau.
+    - Giảm chi phí gas khi triển khai nhiều token.
+    - NFT và vật phẩm trong trò chơi. Các bộ sưu tập (có thể có cả token giống nhau và token khác nhau).
+    - Hàm chính trong ERC-1155:
+      - balanceOf: Lấy số lượng token mà một địa chỉ sở hữu (áp dụng cho từng loại token).
+      - safeTransferFrom: Chuyển token một cách an toàn.
+      - safeBatchTransferFrom: Chuyển nhiều loại token trong một giao dịch.
+      - setApprovalForAll: Cho phép hoặc từ chối một địa chỉ khác thao tác với tất cả token của người dùng.
+
+
+- `ERC-4626 (Tokenized Vault Standard)`
+    - ERC-4626 là tiêu chuẩn cho các token đại diện cho tài sản ký quỹ (vault).
+    - Dùng trong các giao thức tài chính phi tập trung (DeFi) để đại diện cho số tiền người dùng đã gửi vào vault.
+    - Yield farming, lending protocol (ví dụ: Yearn Finance, Compound).
+    - Hàm chính trong ERC-4626:
+      - deposit: Gửi tài sản vào vault.
+      - withdraw: Rút tài sản từ vault.
+      - convertToShares: Tính toán số lượng token vault tương ứng với tài sản gửi.
+      - convertToAssets: Tính toán số lượng tài sản rút tương ứng với token vault.
+
+
+__Ý chính__
+  - ERC-20: Token đồng nhất, giá trị như nhau (tiền, token quản trị).
+  - ERC-721: Token duy nhất, không đồng nhất (NFT, quyền sở hữu).
+  - ERC-1155: Kết hợp cả đồng nhất và không đồng nhất, tối ưu gas (vật phẩm game, sưu tầm).
+  - ERC-4626: Tập trung vào quản lý tài sản trong DeFi (vault token).
