@@ -445,3 +445,80 @@ __Ý chính__
   - ERC-721: Token duy nhất, không đồng nhất (NFT, quyền sở hữu).
   - ERC-1155: Kết hợp cả đồng nhất và không đồng nhất, tối ưu gas (vật phẩm game, sưu tầm).
   - ERC-4626: Tập trung vào quản lý tài sản trong DeFi (vault token).
+
+- **ERC20**
+  - `totalSupply()`: Trả về tổng số lượng token đã được phát hành.
+    ```function totalSupply() external view returns (uint256);```
+  
+  - `balanceOf(address account)`: Trả về số dư token của một địa chỉ cụ thể.
+    ```function balanceOf(address account) external view returns (uint256);```
+
+  - `transfer(address to, uint256 amount)`: Chuyển token đến địa chỉ khác.
+    ```function transfer(address to, uint256 amount) external returns (bool);```
+
+  - `approve(address spender, uint256 amount)`: Cấp quyền cho một địa chỉ để sử dụng số lượng token nhất định.
+    ```function approve(address spender, uint256 amount) external returns (bool);```
+
+  - `allowance(address owner, address spender)`:  Trả về số lượng token mà người được cấp quyền (spender) có thể sử dụng từ chủ sở hữu (owner).
+    ```function allowance(address owner, address spender) external view returns (uint256);```
+
+  - `transferFrom(address from, address to, uint256 amount)`: Chuyển token từ một tài khoản đã được phê duyệt.
+    ```function transferFrom(address from, address to, uint256 amount) external returns (bool);```
+
+- **ERC721**
+  - `balanceOf(address owner)`: Trả về số lượng NFT mà một địa chỉ cụ thể sở hữu.
+    ```function balanceOf(address owner) external view returns (uint256);```
+
+  - `ownerOf(uint256 tokenId)`: Trả về địa chỉ sở hữu của một NFT cụ thể.
+    ```function ownerOf(uint256 tokenId) external view returns (address);```
+
+  - `safeTransferFrom(address from, address to, uint256 tokenId)`: Chuyển NFT từ một địa chỉ đến địa chỉ khác, đảm bảo an toàn.
+    ```function safeTransferFrom(address from, address to, uint256 tokenId) external;```
+
+
+  - `transferFrom(address from, address to, uint256 tokenId)`: Chuyển NFT từ một địa chỉ đến địa chỉ khác (không kiểm tra an toàn).
+    ```function transferFrom(address from, address to, uint256 tokenId) external;```
+
+  - `approve(address to, uint256 tokenId)`: Cấp quyền sử dụng NFT cho địa chỉ khác.
+    ```function approve(address to, uint256 tokenId) external;```
+
+  - `getApproved(uint256 tokenId)`:  Trả về địa chỉ được cấp quyền sử dụng một NFT cụ thể.
+    ```function getApproved(uint256 tokenId) external view returns (address);```
+
+  - `setApprovalForAll(address operator, bool approved)`: Cấp quyền cho một địa chỉ quản lý toàn bộ NFT của bạn.
+    ```function setApprovalForAll(address operator, bool approved) external;```
+
+  - `isApprovedForAll(address owner, address operator)`: Kiểm tra xem địa chỉ nào có quyền quản lý toàn bộ NFT của một người.
+    ```function isApprovedForAll(address owner, address operator) external view returns (bool);```
+
+- **ERC1155**
+  - `balanceOf(address account, uint256 id)`: Trả về số lượng token (có ID id) mà một địa chỉ cụ thể sở hữu.
+    ```function balanceOf(address account, uint256 id) external view returns (uint256);```
+
+  - `balanceOfBatch(address[] calldata accounts, uint256[] calldata ids)`: Trả về số lượng token của nhiều tài khoản và ID cùng lúc.
+    ```function balanceOfBatch(address[] calldata accounts, uint256[] calldata ids) external view returns (uint256[] memory);```
+
+  - `safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data)`: Chuyển một lượng token cụ thể từ một địa chỉ đến địa chỉ khác.
+    ```function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;```
+
+  - `safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data)`: Chuyển nhiều loại token cùng lúc.
+    ```function safeBatchTransferFrom(address from, address to, uint256[] calldata ids, uint256[] calldata amounts, bytes calldata data) external;```
+
+  - `setApprovalForAll(address operator, bool approved)`: Cấp quyền cho một địa chỉ quản lý toàn bộ token của bạn.
+    ```function setApprovalForAll(address operator, bool approved) external;```
+
+  - `isApprovedForAll(address account, address operator)`: Kiểm tra xem một địa chỉ có quyền quản lý toàn bộ token của một người không.
+    ```function isApprovedForAll(address account, address operator) external view returns (bool);```
+
+- **ERC-4626**
+  - `deposit(uint256 assets, address receiver)`: Nạp tài sản vào vault và nhận lại token đại diện.
+    ```function deposit(uint256 assets, address receiver) external returns (uint256 shares);```
+
+  - `withdraw(uint256 assets, address receiver, address owner)`: Rút tài sản khỏi vault.
+    ```function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares);
+
+  - `convertToShares(uint256 assets)`: Chuyển đổi số lượng tài sản thành số lượng token đại diện.
+    ```function convertToShares(uint256 assets) external view returns (uint256 shares);```
+
+  - `convertToAssets(uint256 shares)`: Chuyển đổi số lượng token đại diện thành tài sản.
+    ```function convertToAssets(uint256 shares) external view returns (uint256 assets);```
